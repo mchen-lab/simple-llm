@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -119,14 +120,23 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                     <h3 className="text-sm font-semibold text-primary uppercase tracking-wider border-b pb-1">Open Router</h3>
                     <div className="grid gap-1.5">
                       <Label htmlFor="openrouter-api-key" className="text-xs">OPEN_ROUTER_API_KEY</Label>
-                      <Input
-                        id="openrouter-api-key"
-                        type="password"
-                        value={settings.providers?.openrouter?.api_key || ""}
-                        onChange={(e) => updateProviderField("openrouter", "api_key", e.target.value)}
-                        placeholder="sk-or-v1-..."
-                        className="h-8 text-sm"
-                      />
+                      <div className="relative">
+                        <Input
+                          id="openrouter-api-key"
+                          type={showApiKey ? "text" : "password"}
+                          value={settings.providers?.openrouter?.api_key || ""}
+                          onChange={(e) => updateProviderField("openrouter", "api_key", e.target.value)}
+                          placeholder="sk-or-v1-..."
+                          className="h-8 text-sm pr-9"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
 

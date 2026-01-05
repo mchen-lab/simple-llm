@@ -1,12 +1,10 @@
 {
-  "providers": {
-    "openrouter": {
-      "api_key": "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",
-      "base_url": "https://openrouter.ai/api/v1"
-    },
-    "ollama": {
-      "base_url": "http://localhost:11434/v1"
-    }
+  "api_keys": {
+    "openrouter": "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"
   },
-  "model_names": ""
+  "base_urls": {
+    "openrouter": "https://openrouter.ai/api/v1",
+    "ollama": "http://localhost:11434/v1"
+  },
+  "model_names": "openrouter:google/gemini-2.5-flash-lite\ntest-model:1.0\nollama:mistral"
 }
