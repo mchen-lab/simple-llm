@@ -35,7 +35,12 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
     setLoading(true);
     try {
       const res = await axios.get("/api/settings");
-      setSettings(res.data);
+      const data = res.data;
+      if (data.model_names) {
+        // Convert commas to newlines for better display in textarea
+        data.model_names = data.model_names.replace(/,/g, "\n");
+      }
+      setSettings(data);
     } catch (err) {
       console.error(err);
       setError("Failed to load settings");

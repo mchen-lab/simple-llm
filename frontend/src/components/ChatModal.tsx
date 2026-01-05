@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ChatModalProps {
   open: boolean;
@@ -23,10 +29,37 @@ interface ChatModalProps {
 
 export default function ChatModal({ open, onOpenChange, onSuccess }: ChatModalProps) {
   const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState("openrouter:google/gemini-2.0-flash-lite-001");
+  const [model, setModel] = useState("");
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [tag, setTag] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchAvailableModels = async () => {
+    try {
+      const res = await axios.get("/api/settings");
+      const names = res.data.model_names || "";
+      // Split by newline or comma, trim, and filter out empty strings
+      const models = names.split(/[\n,]+/).map((m: string) => m.trim()).filter((m: string) => m !== "");
+      setAvailableModels(models);
+      
+      // If we have models and none selected, or current model is not in list, select first
+      if (models.length > 0 && (!model || !models.includes(model))) {
+        setModel(models[0]);
+      } else if (models.length === 0 && !model) {
+        // Fallback default if nothing configured
+        setModel("openrouter:google/gemini-2.0-flash-lite-001");
+      }
+    } catch (err) {
+      console.error("Failed to fetch available models", err);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchAvailableModels();
+    }
+  }, [open]);
 
   const handleGenerate = async () => {
     if (!prompt) return;
@@ -66,13 +99,22 @@ export default function ChatModal({ open, onOpenChange, onSuccess }: ChatModalPr
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="modal-model">Model</Label>
-            <Input 
-              id="modal-model" 
-              value={model} 
-              onChange={(e) => setModel(e.target.value)} 
-              placeholder="provider:model" 
-              className="h-8 text-sm"
-            />
+            <Select value={model} onValueChange={setModel}>
+              <SelectTrigger id="modal-model" className="h-8 text-sm">
+                <SelectValue placeholder="Select a model" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableModels.length > 0 ? (
+                  availableModels.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value={model || "openrouter:google/gemini-2.0-flash-lite-001"}>
+                    {model || "openrouter:google/gemini-2.0-flash-lite-001"}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="grid gap-2">
