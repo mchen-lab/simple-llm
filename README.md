@@ -48,6 +48,34 @@ Navigate to [http://localhost:31160](http://localhost:31160) to access the dashb
 - 📱 **Responsive**: Mobile-friendly layout for viewing logs on the go.
 - ⚡ **Auto-Reload**: Real-time log list updates after test generations.
 
+## API Usage
+
+The backend API is designed to be simple and easy to use.
+
+### Text Generation (Default)
+
+Send a POST request to `/api/generate` with a prompt. The response format defaults to "text".
+
+```bash
+curl -X POST http://localhost:31161/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4o", "prompt": "say hi"}'
+```
+
+### JSON Generation (Auto-Dict)
+
+To generate structured JSON, simply provide a `schema` parameter. The backend will automatically switch to dictionary mode.
+
+```bash
+curl -X POST http://localhost:31161/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "prompt": "generate person",
+    "schema": "{\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}}}"
+  }'
+```
+
 ## Project Structure
 
 ```bash

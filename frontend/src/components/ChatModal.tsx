@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+
 
 interface ChatModalProps {
   open: boolean;
@@ -148,10 +157,99 @@ export default function ChatModal({ open, onOpenChange, onSuccess }: ChatModalPr
 
           {responseFormat === "dict" && (
             <div className="grid gap-2">
-              <Label htmlFor="modal-schema">JSON Schema</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="modal-schema">JSON Schema</Label>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground" />
+                  </SheetTrigger>
+                  <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>String Schema Cheat Sheet</SheetTitle>
+                      <SheetDescription>
+                        Define schemas with a concise, human-readable syntax.
+                      </SheetDescription>
+                    </SheetHeader>
+                    
+                    <div className="space-y-6 mt-6">
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-sm text-primary border-b pb-1">Basic Usage</h5>
+                        <pre className="bg-muted p-3 rounded text-xs border font-mono">
+{`name:string
+age:int?
+email:email`}
+                        </pre>
+                        <p className="text-xs text-muted-foreground">Comma or newline separated.</p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-sm text-primary border-b pb-1">Modifiers</h5>
+                        <div className="text-xs space-y-2">
+                          <div className="flex justify-between">
+                            <code className="bg-muted px-1 rounded">key:type</code> <span>Required</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <code className="bg-muted px-1 rounded">key:type?</code> <span>Optional</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <code className="bg-muted px-1 rounded">int(0,100)</code> <span>Range</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <code className="bg-muted px-1 rounded">str(min=5)</code> <span>Length</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-sm text-primary border-b pb-1">Arrays & Nested Objects</h5>
+                        <div className="space-y-4">
+                          <div>
+                            <span className="text-xs text-muted-foreground block mb-1">Simple Arrays</span>
+                            <pre className="bg-muted p-3 rounded text-xs border font-mono">
+{`tags:[string]
+scores:[int]`}
+                            </pre>
+                          </div>
+                          <div>
+                             <span className="text-xs text-muted-foreground block mb-1">Object Arrays</span>
+                            <pre className="bg-muted p-3 rounded text-xs border font-mono">
+{`users:[{
+  name:string,
+  id:uuid
+}]`}
+                            </pre>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <h5 className="font-medium text-sm text-primary border-b pb-1">Complex Example</h5>
+                        <pre className="bg-muted p-3 rounded text-xs border font-mono whitespace-pre-wrap">
+{`id:uuid,
+name:string(min=1),
+price:number(min=0),
+tags:[string]?,
+inventory:{
+  in_stock:bool,
+  quantity:int?
+}`}
+                        </pre>
+                      </div>
+
+                      <div className="space-y-3 pt-2">
+                        <h5 className="font-medium text-sm text-primary border-b pb-1">Supported Types</h5>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          <span className="font-semibold text-foreground">Basic:</span> string, int, number, bool<br/>
+                          <span className="font-semibold text-foreground">Special:</span> email, url, datetime, date, uuid, phone
+                        </p>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
               <Textarea
                 id="modal-schema"
-                placeholder='e.g. {"type": "object", "properties": {"name": {"type": "string"}}}'
+                placeholder='e.g. name:string, age:int?'
                 value={schema}
                 onChange={(e) => setSchema(e.target.value)}
                 className="h-20 text-xs font-mono"

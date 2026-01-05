@@ -60,7 +60,7 @@ async def update_settings(settings: Settings):
 class GenerateRequest(BaseModel):
     model: str
     prompt: str
-    response_format: str = "text"  # text or dict
+    response_format: Optional[str] = "text"  # text or dict
     schema: Optional[str] = None
     tag: Optional[str] = None
 
@@ -72,13 +72,16 @@ async def read_root():
 @app.post("/api/generate")
 async def generate(req: GenerateRequest):
     try:
-        if req.response_format == "dict" and not req.schema:
+        # Auto-detect format: if schema is present, force dict format
+        actual_format = "dict" if req.schema else "text"
+        
+        if actual_format == "dict" and not req.schema:
             raise HTTPException(status_code=400, detail="Schema is required for dict format")
             
         result = llm_service.generate(
             prompt=req.prompt,
             model=req.model,
-            response_format=req.response_format,
+            response_format=actual_format,
             schema=req.schema,
             tag=req.tag
         )

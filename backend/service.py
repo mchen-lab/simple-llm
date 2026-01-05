@@ -8,6 +8,45 @@ import time
 from pathlib import Path
 from typing import Dict, Any, Optional, Union
 from logger import log_llm_call
+try:
+    from string_schema import string_to_json_schema
+except ImportError:
+    string_to_json_schema = None
+
+# ... (rest of imports)
+
+# ... (inside class)
+
+    def generate(
+        self,
+        prompt: str,
+        model: str,
+        response_format: str = "text",
+        schema: Optional[str] = None,
+        tag: Optional[str] = None
+    ) -> Union[str, Dict[str, Any]]:
+        """
+        Unified generation method.
+        """
+        # Auto-detect format based on schema
+        if schema:
+            response_format = "dict"
+            # Try parsing as JSON first
+            try:
+                json.loads(schema)
+            except json.JSONDecodeError:
+                # If not JSON, try string-schema
+                if string_to_json_schema:
+                    try:
+                        print(f"DEBUG: Converting string-schema: {schema}")
+                        schema_dict = string_to_json_schema(schema)
+                        schema = json.dumps(schema_dict)
+                    except Exception as e:
+                        raise RuntimeError(f"Failed to parse schema string: {e}")
+                else:
+                    raise RuntimeError("string-schema library not found, please install it or use valid JSON schema")
+            
+        start_time = time.time()
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
@@ -164,6 +203,10 @@ class LLMService:
         """
         Unified generation method.
         """
+        # Auto-detect format based on schema
+        if schema:
+            response_format = "dict"
+            
         start_time = time.time()
         error = None
         result = None
