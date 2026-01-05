@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { MessageSquare, Settings } from "lucide-react";
+import { MessageSquare, Settings, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatModal from "@/components/ChatModal";
 import SettingsModal from "@/components/SettingsModal";
@@ -18,10 +18,10 @@ export default function AdminLayout() {
         <div className="container flex h-14 items-center justify-between px-4 max-w-6xl mx-auto">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <span className="text-lg font-bold">G</span>
+              <Bot className="h-5 w-5" />
             </div>
-            <span className="hidden font-bold sm:inline-block">
-              Gravity LLM
+            <span className="font-bold">
+              Simple LLM
             </span>
           </div>
           

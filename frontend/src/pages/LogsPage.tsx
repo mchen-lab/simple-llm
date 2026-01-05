@@ -128,19 +128,15 @@ export default function LogsPage() {
   return (
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto p-4">
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="space-y-0.5">
-          <h2 className="text-2xl font-bold tracking-tight">Logs</h2>
-          <p className="text-muted-foreground text-sm">
-            Total logs: {pagination.total}
-          </p>
+      <div className="flex items-center justify-between gap-4 mb-2">
+        <div className="text-lg font-bold tracking-tight whitespace-nowrap">
+          Total Logs: {pagination.total}
         </div>
         
-        <div className="flex items-center gap-2 flex-wrap">
-
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Tag Search Dropdown */}
           <Select value={tagSearch} onValueChange={setTagSearch}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
+            <SelectTrigger className="w-[110px] sm:w-[140px] h-8 text-xs px-2">
               <SelectValue placeholder="All Tags" />
             </SelectTrigger>
             <SelectContent>
