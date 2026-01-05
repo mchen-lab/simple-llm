@@ -307,11 +307,11 @@ export default function LogsPage() {
           <Tabs defaultValue="prompt" className="flex-1 flex flex-col overflow-hidden">
             <div className="px-6 border-b">
                 <TabsList className="w-full justify-start h-10 bg-transparent p-0 gap-6">
-                    <TabsTrigger value="prompt" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 h-10">Prompt</TabsTrigger>
-                    <TabsTrigger value="response" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 h-10">
+                    <TabsTrigger value="prompt" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 h-10 focus-visible:outline-none focus-visible:ring-0">Prompt</TabsTrigger>
+                    <TabsTrigger value="response" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 h-10 focus-visible:outline-none focus-visible:ring-0">
                         {selectedLog?.error ? 'Error' : 'Response'}
                     </TabsTrigger>
-                    <TabsTrigger value="meta" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 h-10">Meta</TabsTrigger>
+                    <TabsTrigger value="meta" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 h-10 focus-visible:outline-none focus-visible:ring-0">Meta</TabsTrigger>
                 </TabsList>
             </div>
 
