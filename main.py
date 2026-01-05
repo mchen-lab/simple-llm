@@ -34,13 +34,15 @@ app.add_middleware(
 class Settings(BaseModel):
     api_keys: Dict[str, str]
     base_urls: Dict[str, str]
+    model_names: str = ""
 
 @app.get("/api/settings")
 async def get_settings():
     # Helper to return current merged settings
     return {
         "api_keys": llm_service.api_keys,
-        "base_urls": llm_service.base_urls
+        "base_urls": llm_service.base_urls,
+        "model_names": llm_service.model_names
     }
 
 @app.post("/api/settings")

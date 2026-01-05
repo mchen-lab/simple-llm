@@ -43,6 +43,8 @@ class LLMService:
             self.base_urls["openrouter"] = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
         if "ollama" not in self.base_urls:
             self.base_urls["ollama"] = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+        
+        self.model_names = self.settings.get("model_names", "")
 
     def _get_provider_config(self, model: str):
         """Determine provider and config from model string."""

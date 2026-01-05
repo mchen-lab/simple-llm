@@ -1,10 +1,10 @@
-
 {
   "api_keys": {
-    "openrouter": ""
+    "openrouter": "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"
   },
   "base_urls": {
     "openrouter": "https://openrouter.ai/api/v1",
     "ollama": "http://localhost:11434/v1"
-  }
+  },
+  "model_names": "openrouter:google/gemini-2.5-flash-lite"
 }
