@@ -1,18 +1,14 @@
 
 
+
 import os
 import json
 import requests
 import time
 from pathlib import Path
 from typing import Dict, Any, Optional, Union
-from dotenv import load_dotenv
 from logger import log_llm_call
 
-# Load environment variables
-load_dotenv()
-
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 class LLMService:
@@ -91,13 +87,6 @@ class LLMService:
             provider_config = self.providers.get("openrouter", {})
             api_key = provider_config.get("api_key")
             base_url = "https://openrouter.ai/api/v1"  # Fixed URL
-        else:
-            print(f"Note: Provider '{provider}' not explicitly supported locally, routing via OpenRouter.")
-            provider = "openrouter"
-            provider_config = self.providers.get("openrouter", {})
-            api_key = provider_config.get("api_key")
-            base_url = "https://openrouter.ai/api/v1"  # Fixed URL
-            actual_model = model 
         
         return provider, api_key, base_url, actual_model
 

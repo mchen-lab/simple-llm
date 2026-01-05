@@ -55,6 +55,7 @@ echo "▶️  Starting new container..."
 docker run -d \
   --name "$CONTAINER_NAME" \
   -p "$PORT:$PORT" \
+  -p "31161:31161" \
   -v "$VOLUME:/app/data" \
   "$IMAGE"
 

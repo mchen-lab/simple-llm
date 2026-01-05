@@ -44,7 +44,15 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
       setSettings(data);
     } catch (err) {
       console.error(err);
-      setError("Failed to load settings");
+      setError("Failed to load settings from server. Check if backend is running.");
+      // Set empty settings to stop the spinner
+      setSettings({
+        providers: {
+          openrouter: { api_key: "" },
+          ollama: { base_url: "" }
+        },
+        model_names: ""
+      });
     } finally {
       setLoading(false);
     }
