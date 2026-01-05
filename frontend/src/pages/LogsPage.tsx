@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { RefreshCcw, Trash2, ChevronLeft, ChevronRight, Pin } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,7 @@ export default function LogsPage() {
       const params: any = { page, limit: pagination.limit };
       if (tagSearch !== "all") params.tag = tagSearch;
 
-      const res = await axios.get("/api/logs", { params });
+      const res = await api.get("/api/logs", { params });
       setLogs(res.data.data);
       setPagination(res.data.pagination);
     } catch (err) {
@@ -81,8 +81,9 @@ export default function LogsPage() {
 
   const fetchTags = async () => {
     try {
-      const res = await axios.get("/api/logs/tags");
-      setAvailableTags(res.data);
+      const res = await api.get("/api/logs/tags");
+      // Ensure we always set an array, even if API returns unexpected data
+      setAvailableTags(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Failed to fetch tags", err);
     }
@@ -94,7 +95,7 @@ export default function LogsPage() {
       const val = purgeOption.slice(0, -1);
       const param = isCount ? `count_to_keep=${val}` : `days_to_keep=${val}`;
       
-      await axios.delete(`/api/logs?${param}`);
+      await api.delete(`/api/logs?${param}`);
       setPurgeOpen(false);
       fetchLogs(1); // Refresh logs
     } catch (err) {
@@ -104,7 +105,7 @@ export default function LogsPage() {
 
   const toggleLock = async (logId: number, currentLocked: boolean) => {
       try {
-          await axios.patch(`/api/logs/${logId}`, { locked: !currentLocked });
+          await api.patch(`/api/logs/${logId}`, { locked: !currentLocked });
           // Update local state optimistic logic
           setLogs(prev => prev.map(log => 
               log.id === logId ? { ...log, locked: !currentLocked } : log
@@ -211,7 +212,7 @@ export default function LogsPage() {
                         <span className="shrink-0">•</span>
                         <span className="text-blue-500 font-medium shrink-0">{formatType}</span>
                         <span className="shrink-0">•</span>
-                        <span className="shrink-0">{log.duration_ms.toFixed(0)}ms</span>
+                        <span className="shrink-0">{log.duration_ms?.toFixed(0) ?? 'N/A'}ms</span>
                     </div>
                     
                     <div className="shrink-0 ml-1">
@@ -349,7 +350,7 @@ export default function LogsPage() {
                             </div>
                             <div className="space-y-1">
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Execution Time</span>
-                                <p className="font-medium text-sm">{selectedLog?.duration_ms.toFixed(0)}ms</p>
+                                <p className="font-medium text-sm">{selectedLog?.duration_ms?.toFixed(0) ?? 'N/A'}ms</p>
                             </div>
                             <div className="space-y-1">
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Token Usage</span>
@@ -366,7 +367,7 @@ export default function LogsPage() {
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">JSON Schema</span>
                                 <div 
                                     className="bg-muted/30 p-3 rounded-md border text-xs overflow-auto max-h-40 font-mono whitespace-pre syntax-highlight"
-                                    dangerouslySetInnerHTML={{ __html: syntaxHighlight(selectedLog.metadata.schema) }}
+                                    dangerouslySetInnerHTML={{ __html: syntaxHighlight(JSON.stringify(selectedLog.metadata.schema, null, 2)) }}
                                 />
                             </div>
                         )}

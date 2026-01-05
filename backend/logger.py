@@ -5,8 +5,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 
-DB_FILE = Path("data/logs.db")
-LEGACY_LOG_FILE = Path("logs/llm.jsonl")
+DB_FILE = Path("../data/logs.db")
+LEGACY_LOG_FILE = Path("../logs/llm.jsonl")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)

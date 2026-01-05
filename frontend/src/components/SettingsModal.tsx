@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/settings");
+      const res = await api.get("/api/settings");
       const data = res.data;
       if (data.model_names) {
         // Convert commas to newlines for better display in textarea
@@ -60,7 +60,7 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
     setSaving(true);
     setError(null);
     try {
-      await axios.post("/api/settings", settings);
+      await api.post("/api/settings", settings);
       onOpenChange(false);
     } catch (err) {
       console.error(err);
@@ -70,17 +70,16 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
     }
   };
 
-  const updateApiKey = (provider: string, value: string) => {
+  const updateProviderField = (provider: string, field: string, value: string) => {
     setSettings({
       ...settings,
-      api_keys: { ...settings.api_keys, [provider]: value }
-    });
-  };
-
-  const updateBaseUrl = (provider: string, value: string) => {
-    setSettings({
-      ...settings,
-      base_urls: { ...settings.base_urls, [provider]: value }
+      providers: {
+        ...settings.providers,
+        [provider]: {
+          ...settings.providers?.[provider],
+          [field]: value
+        }
+      }
     });
   };
 
@@ -123,8 +122,8 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                       <Input
                         id="openrouter-api-key"
                         type="password"
-                        value={settings.api_keys?.openrouter || ""}
-                        onChange={(e) => updateApiKey("openrouter", e.target.value)}
+                        value={settings.providers?.openrouter?.api_key || ""}
+                        onChange={(e) => updateProviderField("openrouter", "api_key", e.target.value)}
                         placeholder="sk-or-v1-..."
                         className="h-8 text-sm"
                       />
@@ -138,8 +137,8 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
                       <Label htmlFor="ollama-base-url" className="text-xs">OLLAMA_BASE_URL</Label>
                       <Input
                         id="ollama-base-url"
-                        value={settings.base_urls?.ollama || ""}
-                        onChange={(e) => updateBaseUrl("ollama", e.target.value)}
+                        value={settings.providers?.ollama?.base_url || ""}
+                        onChange={(e) => updateProviderField("ollama", "base_url", e.target.value)}
                         placeholder="http://localhost:11434/v1"
                         className="h-8 text-sm"
                       />
@@ -178,6 +177,13 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
             Save Changes
           </Button>
         </DialogFooter>
+
+        <div className="absolute bottom-2 left-4 text-[10px] text-muted-foreground opacity-50 pointer-events-none font-mono">
+          Commit: {typeof __COMMIT_HASH__ !== 'undefined' ? __COMMIT_HASH__ : 'unknown'}
+        </div>
+        <div className="absolute bottom-2 right-4 text-[10px] text-muted-foreground opacity-50 pointer-events-none font-mono">
+          v{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0'}
+        </div>
       </DialogContent>
     </Dialog>
   );

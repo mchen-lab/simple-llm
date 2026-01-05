@@ -20,12 +20,16 @@ class LLMService:
 
 
     def __init__(self):
-        self.settings_file = Path("data/settings.json")
+        self.settings_file = Path("../data/settings.json")
         self.load_settings()
 
     def load_settings(self):
         """Load settings from JSON file, fallback to env vars if file/key missing."""
         self.settings = {}
+        
+        # Ensure data directory exists
+        self.settings_file.parent.mkdir(parents=True, exist_ok=True)
+        
         if self.settings_file.exists():
             try:
                 with open(self.settings_file, "r") as f:
@@ -33,18 +37,36 @@ class LLMService:
             except Exception as e:
                 print(f"Error loading settings.json: {e}")
         
-        # Merge with defaults/env
-        self.api_keys = self.settings.get("api_keys", {})
-        if "openrouter" not in self.api_keys or not self.api_keys["openrouter"]:
-             self.api_keys["openrouter"] = os.getenv("OPENROUTER_API_KEY")
-
-        self.base_urls = self.settings.get("base_urls", {})
-        if "openrouter" not in self.base_urls:
-            self.base_urls["openrouter"] = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-        if "ollama" not in self.base_urls:
-            self.base_urls["ollama"] = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+        # Get providers config (new format)
+        self.providers = self.settings.get("providers", {})
+        
+        # Initialize OpenRouter provider (only needs api_key, base_url is fixed)
+        if "openrouter" not in self.providers:
+            self.providers["openrouter"] = {}
+        if not self.providers["openrouter"].get("api_key"):
+            self.providers["openrouter"]["api_key"] = os.getenv("OPENROUTER_API_KEY", "")
+        
+        # Initialize Ollama provider
+        if "ollama" not in self.providers:
+            self.providers["ollama"] = {}
+        if not self.providers["ollama"].get("base_url"):
+            self.providers["ollama"]["base_url"] = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
         
         self.model_names = self.settings.get("model_names", "")
+        
+        # Create default settings file if it doesn't exist
+        if not self.settings_file.exists():
+            self._save_settings()
+
+    def _save_settings(self):
+        """Save current settings to JSON file."""
+        settings_data = {
+            "providers": self.providers,
+            "model_names": self.model_names
+        }
+        with open(self.settings_file, "w") as f:
+            json.dump(settings_data, f, indent=2)
+        print(f"Created default settings at {self.settings_file}")
 
     def _get_provider_config(self, model: str):
         """Determine provider and config from model string."""
@@ -57,20 +79,25 @@ class LLMService:
             
         provider = provider.lower()
         
+        # Get provider config
+        provider_config = self.providers.get(provider, {})
+        
         # Only support OpenRouter and Ollama
         if provider == "ollama":
             api_key = None
-            base_url = self.base_urls.get("ollama")
-        elif provider == "openrouter" or provider in self.api_keys: 
+            base_url = provider_config.get("base_url", self.providers.get("ollama", {}).get("base_url"))
+        elif provider == "openrouter" or provider in self.providers:
             provider = "openrouter"
-            api_key = self.api_keys.get("openrouter")
-            base_url = self.base_urls.get("openrouter")
+            provider_config = self.providers.get("openrouter", {})
+            api_key = provider_config.get("api_key")
+            base_url = "https://openrouter.ai/api/v1"  # Fixed URL
         else:
-             print(f"Note: Provider '{provider}' not explicitly supported locally, routing via OpenRouter.")
-             provider = "openrouter"
-             api_key = self.api_keys.get("openrouter")
-             base_url = self.base_urls.get("openrouter")
-             actual_model = model 
+            print(f"Note: Provider '{provider}' not explicitly supported locally, routing via OpenRouter.")
+            provider = "openrouter"
+            provider_config = self.providers.get("openrouter", {})
+            api_key = provider_config.get("api_key")
+            base_url = "https://openrouter.ai/api/v1"  # Fixed URL
+            actual_model = model 
         
         return provider, api_key, base_url, actual_model
 

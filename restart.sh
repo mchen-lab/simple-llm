@@ -33,7 +33,7 @@ mkdir -p "$PROJECT_ROOT/logs"
 
 # Start Backend
 echo "   Starting Backend (uvicorn)..."
-cd "$PROJECT_ROOT"
+cd "$PROJECT_ROOT/backend"
 # Using nohup/background effectively controlled by this script
 uvicorn main:app --reload --host 0.0.0.0 --port 31161 > "$PROJECT_ROOT/logs/backend.log" 2>&1 &
 BACKEND_PID=$!

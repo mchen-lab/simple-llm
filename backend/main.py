@@ -32,16 +32,14 @@ app.add_middleware(
 
 
 class Settings(BaseModel):
-    api_keys: Dict[str, str]
-    base_urls: Dict[str, str]
+    providers: Dict[str, Dict[str, str]]
     model_names: str = ""
 
 @app.get("/api/settings")
 async def get_settings():
     # Helper to return current merged settings
     return {
-        "api_keys": llm_service.api_keys,
-        "base_urls": llm_service.base_urls,
+        "providers": llm_service.providers,
         "model_names": llm_service.model_names
     }
 
@@ -49,7 +47,7 @@ async def get_settings():
 async def update_settings(settings: Settings):
     try:
         # Save to file
-        with open("data/settings.json", "w") as f:
+        with open("../data/settings.json", "w") as f:
             json.dump(settings.dict(), f, indent=2)
         
         # Reload service
@@ -124,21 +122,10 @@ async def read_logs(
         }
     }
 
+# API-only mode - frontend served separately on port 31160
+
 @app.get("/api/logs/tags")
-async def read_tags():
+async def get_log_tags():
+    """Get unique tags from logs."""
     from logger import get_unique_tags
     return get_unique_tags()
-
-@app.delete("/api/logs")
-async def purge_logs_endpoint(days_to_keep: Optional[int] = None, count_to_keep: Optional[int] = None):
-    try:
-        if count_to_keep is not None:
-            count = purge_logs_by_count(count_to_keep)
-        elif days_to_keep is not None:
-            count = purge_logs(days_to_keep)
-        else:
-            raise HTTPException(status_code=400, detail="Either days_to_keep or count_to_keep must be provided")
-            
-        return {"status": "success", "deleted": count}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))

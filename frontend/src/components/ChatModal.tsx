@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ export default function ChatModal({ open, onOpenChange, onSuccess }: ChatModalPr
 
   const fetchAvailableModels = async () => {
     try {
-      const res = await axios.get("/api/settings");
+      const res = await api.get("/api/settings");
       const names = res.data.model_names || "";
       // Split by newline or comma, trim, and filter out empty strings
       const models = names.split(/[\n,]+/).map((m: string) => m.trim()).filter((m: string) => m !== "");
@@ -67,7 +67,7 @@ export default function ChatModal({ open, onOpenChange, onSuccess }: ChatModalPr
     setError(null);
 
     try {
-      await axios.post("/api/generate", {
+      await api.post("/api/generate", {
         model,
         prompt,
         tag: tag || undefined,
