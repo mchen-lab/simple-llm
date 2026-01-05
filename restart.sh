@@ -10,15 +10,25 @@ if [ -f "$WORKSPACE_ROOT/.venv/bin/activate" ]; then
     source "$WORKSPACE_ROOT/.venv/bin/activate"
 fi
 
-# Function to kill process on a specific port
+# Function to kill process on a specific port, excluding Docker/infrastructure
 kill_port() {
     local port=$1
     local process_name=$2
-    local pids=$(lsof -ti :$port -sTCP:LISTEN 2>/dev/null)
+    
+    # Check if anything is listening
+    local all_pids=$(lsof -ti :$port -sTCP:LISTEN 2>/dev/null)
+    if [ -z "$all_pids" ]; then
+        return
+    fi
+
+    # Find PIDs on port, excluding Docker-related processes
+    local pids=$(lsof -nP -i :$port -sTCP:LISTEN 2>/dev/null | grep -vE "OrbStack|Docker|com.docker" | awk 'NR>1 {print $2}' | sort -u)
     
     if [ ! -z "$pids" ]; then
-        echo "Found existing $process_name (PIDs:$pids) on port $port. Killing..."
+        echo "Found existing processes (PIDs:$pids) on port $port. Killing..."
         echo "$pids" | xargs kill -9 2>/dev/null || true
+    else
+        echo "⚠️  Port $port is in use by a protected process (Docker/OrbStack). Please stop the container first."
     fi
 }
 

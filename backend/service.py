@@ -39,8 +39,13 @@ class LLMService:
         # Initialize OpenRouter provider (only needs api_key, base_url is fixed)
         if "openrouter" not in self.providers:
             self.providers["openrouter"] = {}
-        if not self.providers["openrouter"].get("api_key"):
-            self.providers["openrouter"]["api_key"] = os.getenv("OPENROUTER_API_KEY", "")
+        
+        api_key = self.providers["openrouter"].get("api_key")
+        if not api_key:
+            api_key = os.getenv("OPENROUTER_API_KEY", "")
+        
+        if api_key:
+            self.providers["openrouter"]["api_key"] = api_key.strip()
         
         # Initialize Ollama provider
         if "ollama" not in self.providers:
@@ -86,6 +91,8 @@ class LLMService:
             provider = "openrouter"
             provider_config = self.providers.get("openrouter", {})
             api_key = provider_config.get("api_key")
+            if api_key:
+                api_key = api_key.strip()
             base_url = "https://openrouter.ai/api/v1"  # Fixed URL
         
         return provider, api_key, base_url, actual_model
@@ -99,7 +106,11 @@ class LLMService:
         }
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
-            
+            # REDACTED LOGGING
+            key_preview = f"{api_key[:6]}...{api_key[-4:]}" if len(api_key) > 10 else "***"
+            print(f"DEBUG: Using API Key: {key_preview}, length: {len(api_key)}")
+        else:
+            print("DEBUG: NO API KEY FOUND")
 
         # OpenRouter specific headers
         if provider == "openrouter":
