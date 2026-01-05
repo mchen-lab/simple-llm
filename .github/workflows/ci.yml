@@ -92,13 +92,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
+      - name: Prepare Docker images
+        id: images
+        run: |
+          IMAGES="${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME_GHCR }}"
+          if [ "${{ secrets.DOCKER_USERNAME }}" != "" ]; then
+            IMAGES="${IMAGES},${{ env.REGISTRY_DOCKERHUB }}/${{ env.IMAGE_NAME_DOCKERHUB }}"
+          fi
+          echo "images=${IMAGES}" >> $GITHUB_OUTPUT
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME_GHCR }}
-            ${{ secrets.DOCKER_USERNAME != '' && format('{0}/{1}', env.REGISTRY_DOCKERHUB, env.IMAGE_NAME_DOCKERHUB) || '' }}
+          images: ${{ steps.images.outputs.images }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
