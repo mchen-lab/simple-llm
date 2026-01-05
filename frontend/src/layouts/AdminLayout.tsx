@@ -1,75 +1,71 @@
 
 import { useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
-import { Menu, MessageSquare, Settings, FileText, Bot } from "lucide-react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { MessageSquare, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import ChatModal from "@/components/ChatModal";
+import SettingsModal from "@/components/SettingsModal";
 
 export default function AdminLayout() {
-  const location = useLocation();
-  const [open, setOpen] = useState(false);
-
-  const navItems = [
-    { href: "/", label: "Chat Test", icon: MessageSquare },
-    { href: "/logs", label: "Logs", icon: FileText },
-    { href: "/settings", label: "Configuration", icon: Settings },
-  ];
-
-  const NavContent = () => (
-    <div className="flex flex-col gap-2 py-4">
-      <div className="flex items-center gap-2 px-4 mb-4 text-xl font-bold text-primary">
-        <Bot className="w-8 h-8" />
-        <span>Simple LLM</span>
-      </div>
-      <nav className="flex flex-col gap-1 px-2">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            to={item.href}
-            onClick={() => setOpen(false)}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-              location.pathname === item.href
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted"
-            )}
-          >
-            <item.icon className="w-4 h-4" />
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-    </div>
-  );
+  const [chatOpen, setChatOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:flex w-64 border-r flex-col fixed inset-y-0">
-        <NavContent />
-      </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Top Bar */}
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center justify-between px-4 max-w-6xl mx-auto">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <span className="text-lg font-bold">G</span>
+            </div>
+            <span className="hidden font-bold sm:inline-block">
+              Gravity LLM
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9 text-muted-foreground hover:text-primary"
+                onClick={() => setChatOpen(true)}
+                title="Chat Test"
+            >
+              <MessageSquare className="h-5 w-5" />
+            </Button>
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9 text-muted-foreground hover:text-primary"
+                onClick={() => setSettingsOpen(true)}
+                title="Configuration"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </header>
 
       {/* Main Content */}
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 md:hidden">
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="w-5 h-5" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-64">
-              <NavContent />
-            </SheetContent>
-          </Sheet>
-          <div className="font-semibold">Simple LLM Admin</div>
-        </header>
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
-          <Outlet />
-        </main>
-      </div>
+      <main className="flex-1 flex flex-col">
+          <Outlet context={{ refreshLogs: () => { /* This will be handled via events or direct prop if needed */ } }} />
+      </main>
+
+      {/* Modals */}
+      <ChatModal 
+        open={chatOpen} 
+        onOpenChange={setChatOpen} 
+        onSuccess={() => {
+            // Trigger refresh in LogsPage via window event for simplicity across routes
+            window.dispatchEvent(new CustomEvent("refresh-logs"));
+        }} 
+      />
+      <SettingsModal 
+        open={settingsOpen} 
+        onOpenChange={setSettingsOpen} 
+      />
     </div>
   );
 }

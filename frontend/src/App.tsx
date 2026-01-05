@@ -10,8 +10,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<AdminLayout />}>
-          <Route index element={<ChatPage />} />
-          <Route path="logs" element={<LogsPage />} />
+          <Route index element={<LogsPage />} />
+          <Route path="chat" element={<ChatPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

@@ -129,7 +129,8 @@ class LLMService:
         prompt: str,
         model: str,
         response_format: str = "text",
-        schema: Optional[str] = None
+        schema: Optional[str] = None,
+        tag: Optional[str] = None
     ) -> Union[str, Dict[str, Any]]:
         """
         Unified generation method.
@@ -186,7 +187,8 @@ class LLMService:
                 response=result if not error else None,
                 start_time=start_time,
                 error=error,
-                metadata={"format": response_format, "schema": schema, "usage": usage}
+                metadata={"format": response_format, "schema": schema, "usage": usage},
+                tag=tag
             )
             
         return result

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any, Union
 
 from service import llm_service
-from logger import get_logs, init_db, count_logs, purge_logs
+from logger import get_logs, init_db, count_logs, purge_logs, purge_logs_by_count
 
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,6 +62,7 @@ class GenerateRequest(BaseModel):
     prompt: str
     response_format: str = "text"  # text or dict
     schema: Optional[str] = None
+    tag: Optional[str] = None
 
 @app.get("/")
 async def read_root():
@@ -78,13 +79,14 @@ async def generate(req: GenerateRequest):
             prompt=req.prompt,
             model=req.model,
             response_format=req.response_format,
-            schema=req.schema
+            schema=req.schema,
+            tag=req.tag
         )
         return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-from logger import get_logs, init_db, count_logs, purge_logs, toggle_log_lock
+from logger import get_logs, init_db, count_logs, purge_logs, toggle_log_lock, purge_logs_by_count
 
 # ...
 
@@ -103,11 +105,12 @@ async def read_logs(
     page: int = 1, 
     limit: int = 50,
     start_date: Optional[str] = None,
-    end_date: Optional[str] = None
+    end_date: Optional[str] = None,
+    tag: Optional[str] = None
 ):
     offset = (page - 1) * limit
-    logs = get_logs(limit=limit, offset=offset, start_date=start_date, end_date=end_date)
-    total = count_logs(start_date=start_date, end_date=end_date)
+    logs = get_logs(limit=limit, offset=offset, start_date=start_date, end_date=end_date, tag=tag)
+    total = count_logs(start_date=start_date, end_date=end_date, tag=tag)
     
     return {
         "data": logs,
@@ -119,10 +122,21 @@ async def read_logs(
         }
     }
 
+@app.get("/api/logs/tags")
+async def read_tags():
+    from logger import get_unique_tags
+    return get_unique_tags()
+
 @app.delete("/api/logs")
-async def purge_logs_endpoint(days_to_keep: int):
+async def purge_logs_endpoint(days_to_keep: Optional[int] = None, count_to_keep: Optional[int] = None):
     try:
-        count = purge_logs(days_to_keep)
+        if count_to_keep is not None:
+            count = purge_logs_by_count(count_to_keep)
+        elif days_to_keep is not None:
+            count = purge_logs(days_to_keep)
+        else:
+            raise HTTPException(status_code=400, detail="Either days_to_keep or count_to_keep must be provided")
+            
         return {"status": "success", "deleted": count}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

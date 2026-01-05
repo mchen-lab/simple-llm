@@ -3,7 +3,7 @@ import sqlite3
 import time
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 DB_FILE = Path("data/logs.db")
 LEGACY_LOG_FILE = Path("logs/llm.jsonl")
@@ -31,13 +31,18 @@ def init_db():
             duration_ms REAL,
             error TEXT,
             metadata TEXT,
-            locked BOOLEAN DEFAULT 0
+            locked BOOLEAN DEFAULT 0,
+            tag TEXT
         )
     ''')
     
-    # Attempt to add locked column if it doesn't exist (migrations for existing DB)
     try:
         c.execute('ALTER TABLE logs ADD COLUMN locked BOOLEAN DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass # Column likely already exists
+
+    try:
+        c.execute('ALTER TABLE logs ADD COLUMN tag TEXT')
     except sqlite3.OperationalError:
         pass # Column likely already exists
 
@@ -53,8 +58,8 @@ def init_db():
                     try:
                         entry = json.loads(line)
                         c.execute('''
-                            INSERT INTO logs (timestamp, model, prompt, response, duration_ms, error, metadata, locked)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+                            INSERT INTO logs (timestamp, model, prompt, response, duration_ms, error, metadata, locked, tag)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
                         ''', (
                             entry.get("timestamp"),
                             entry.get("model"),
@@ -62,7 +67,8 @@ def init_db():
                             json.dumps(entry.get("response"), ensure_ascii=False),
                             entry.get("duration_ms"),
                             entry.get("error"),
-                            json.dumps(entry.get("metadata", {}), ensure_ascii=False)
+                            json.dumps(entry.get("metadata", {}), ensure_ascii=False),
+                            None # tag
                         ))
                         count += 1
                     except Exception as e:
@@ -83,7 +89,8 @@ def log_llm_call(
     response: Any,
     start_time: float,
     error: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None,
+    tag: Optional[str] = None
 ):
     """Logs an LLM call to the SQLite database."""
     duration_ms = (time.time() - start_time) * 1000
@@ -96,9 +103,9 @@ def log_llm_call(
         conn = get_db_connection()
         c = conn.cursor()
         c.execute('''
-            INSERT INTO logs (timestamp, model, prompt, response, duration_ms, error, metadata, locked)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 0)
-        ''', (timestamp, model, prompt, response_json, duration_ms, error, metadata_json))
+            INSERT INTO logs (timestamp, model, prompt, response, duration_ms, error, metadata, locked, tag)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
+        ''', (timestamp, model, prompt, response_json, duration_ms, error, metadata_json, tag))
         conn.commit()
         conn.close()
     except Exception as e:
@@ -108,7 +115,8 @@ def get_logs(
     limit: int = 50,
     offset: int = 0,
     start_date: Optional[str] = None,
-    end_date: Optional[str] = None
+    end_date: Optional[str] = None,
+    tag: Optional[str] = None
 ):
     """Retrieve logs from the database with pagination and filtering."""
     logs = []
@@ -129,6 +137,9 @@ def get_logs(
         if end_date:
             conditions.append("timestamp <= ?")
             params.append(end_date)
+        if tag:
+            conditions.append("tag LIKE ?")
+            params.append(f"%{tag}%")
             
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
@@ -163,7 +174,8 @@ def get_logs(
                 "duration_ms": row["duration_ms"],
                 "error": row["error"],
                 "metadata": metadata_obj,
-                "locked": is_locked
+                "locked": is_locked,
+                "tag": row["tag"] if "tag" in row.keys() else None
             })
             
         conn.close()
@@ -172,7 +184,11 @@ def get_logs(
         
     return logs
 
-def count_logs(start_date: Optional[str] = None, end_date: Optional[str] = None) -> int:
+def count_logs(
+    start_date: Optional[str] = None, 
+    end_date: Optional[str] = None,
+    tag: Optional[str] = None
+) -> int:
     """Count total logs matching filters."""
     if not DB_FILE.exists():
         return 0
@@ -191,6 +207,9 @@ def count_logs(start_date: Optional[str] = None, end_date: Optional[str] = None)
         if end_date:
             conditions.append("timestamp <= ?")
             params.append(end_date)
+        if tag:
+            conditions.append("tag LIKE ?")
+            params.append(f"%{tag}%")
             
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
@@ -226,6 +245,36 @@ def purge_logs(days_to_keep: int) -> int:
         print(f"Error purging logs: {e}")
         return 0
 
+def purge_logs_by_count(count_to_keep: int) -> int:
+    """Keep only the most recent N logs, respecting locks. Returns count of deleted rows."""
+    if not DB_FILE.exists():
+        return 0
+        
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        
+        # Find the ID of the N-th newest log
+        c.execute('SELECT id FROM logs ORDER BY id DESC LIMIT 1 OFFSET ?', (count_to_keep - 1,))
+        row = c.fetchone()
+        
+        if not row:
+            conn.close()
+            return 0
+            
+        cutoff_id = row[0]
+        
+        # Delete logs with id < cutoff_id that are not locked
+        c.execute('DELETE FROM logs WHERE id < ? AND (locked IS NULL OR locked = 0)', (cutoff_id,))
+        deleted_count = c.rowcount
+        
+        conn.commit()
+        conn.close()
+        return deleted_count
+    except Exception as e:
+        print(f"Error purging logs by count: {e}")
+        return 0
+
 def toggle_log_lock(log_id: int, locked: bool) -> bool:
     """Update the lock status of a log entry."""
     if not DB_FILE.exists():
@@ -242,3 +291,19 @@ def toggle_log_lock(log_id: int, locked: bool) -> bool:
     except Exception as e:
         print(f"Error toggling log locks: {e}")
         return False
+
+def get_unique_tags() -> List[str]:
+    """Retrieve all unique tags from the logs table."""
+    if not DB_FILE.exists():
+        return []
+        
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute('SELECT DISTINCT tag FROM logs WHERE tag IS NOT NULL AND tag != "" ORDER BY tag COLLATE NOCASE')
+        tags = [row[0] for row in c.fetchall()]
+        conn.close()
+        return tags
+    except Exception as e:
+        print(f"Error fetching unique tags: {e}")
+        return []
