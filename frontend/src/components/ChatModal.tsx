@@ -32,6 +32,8 @@ export default function ChatModal({ open, onOpenChange, onSuccess }: ChatModalPr
   const [model, setModel] = useState("");
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [tag, setTag] = useState("");
+  const [responseFormat, setResponseFormat] = useState("text");
+  const [schema, setSchema] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +73,8 @@ export default function ChatModal({ open, onOpenChange, onSuccess }: ChatModalPr
         model,
         prompt,
         tag: tag || undefined,
-        response_format: "text",
+        response_format: responseFormat,
+        schema: responseFormat === "dict" ? schema || undefined : undefined,
       });
       
       setPrompt("");
@@ -117,16 +120,44 @@ export default function ChatModal({ open, onOpenChange, onSuccess }: ChatModalPr
             </Select>
           </div>
           
-          <div className="grid gap-2">
-            <Label htmlFor="modal-tag">Tag (Optional)</Label>
-            <Input 
-              id="modal-tag" 
-              value={tag} 
-              onChange={(e) => setTag(e.target.value)} 
-              placeholder="e.g. test-run" 
-              className="h-8 text-sm"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="modal-tag">Tag (Optional)</Label>
+              <Input 
+                id="modal-tag" 
+                value={tag} 
+                onChange={(e) => setTag(e.target.value)} 
+                placeholder="e.g. test-run" 
+                className="h-8 text-sm"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="modal-format">Format</Label>
+              <Select value={responseFormat} onValueChange={setResponseFormat}>
+                <SelectTrigger id="modal-format" className="h-8 text-sm">
+                  <SelectValue placeholder="Response Format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">gen_text</SelectItem>
+                  <SelectItem value="dict">gen_dict</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {responseFormat === "dict" && (
+            <div className="grid gap-2">
+              <Label htmlFor="modal-schema">JSON Schema</Label>
+              <Textarea
+                id="modal-schema"
+                placeholder='e.g. {"type": "object", "properties": {"name": {"type": "string"}}}'
+                value={schema}
+                onChange={(e) => setSchema(e.target.value)}
+                className="h-20 text-xs font-mono"
+              />
+            </div>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="modal-prompt">Prompt</Label>
