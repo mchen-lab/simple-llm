@@ -4,7 +4,8 @@ set -e
 TAG="dev"
 DELETE_VOLUME=false
 CONTAINER_NAME="simple-llm"
-PORT=31160
+UI_PORT=31160
+BACKEND_PORT=31161
 VOLUME="simple_llm_data"
 
 # Parse arguments
@@ -54,12 +55,13 @@ fi
 echo "▶️  Starting new container..."
 docker run -d \
   --name "$CONTAINER_NAME" \
-  -p "$PORT:$PORT" \
-  -p "31161:31161" \
+  -p "$UI_PORT:31160" \
+  -p "$BACKEND_PORT:31161" \
   -v "$VOLUME:/app/data" \
   "$IMAGE"
 
 echo "✅ Container started!"
-echo "   - URL: http://localhost:$PORT"
-echo "   - Tag: $TAG"
-echo "   - Logs: docker logs -f $CONTAINER_NAME"
+echo "   - Web UI: http://localhost:$UI_PORT"
+echo "   - API:    http://localhost:$BACKEND_PORT"
+echo "   - Tag:    $TAG"
+echo "   - Logs:   docker logs -f $CONTAINER_NAME"
